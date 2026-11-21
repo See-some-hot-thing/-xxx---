@@ -48,43 +48,42 @@ function saveUserState() {
 // BANNER, SOCIAL BAR & POPUNDER HANDLERS
 // ==========================================
 function injectIframeBanner(containerId, config) {
-  const container = document.getElementById(containerId);
-  if (!container || !config) return;
+  return new Promise((resolve) => {
+    const container = document.getElementById(containerId);
+    if (!container || !config) return resolve();
 
-  container.innerHTML = "";
+    container.innerHTML = "";
 
-  const optScript = document.createElement("script");
-  optScript.type = "text/javascript";
-  optScript.text = `
-    atOptions = {
-      'key' : '${config.key}',
-      'format' : 'iframe',
-      'height' : ${config.height},
-      'width' : ${config.width},
-      'params' : {}
+    window.atOptions = {
+      key: config.key,
+      format: "iframe",
+      height: config.height,
+      width: config.width,
+      params: {}
     };
-  `;
 
-  const adScript = document.createElement("script");
-  adScript.type = "text/javascript";
-  adScript.src = config.src;
-  adScript.async = true;
+    const adScript = document.createElement("script");
+    adScript.type = "text/javascript";
+    adScript.src = config.src;
+    adScript.async = false;
 
-  container.appendChild(optScript);
-  container.appendChild(adScript);
+    adScript.onload = () => setTimeout(resolve, 400);
+    adScript.onerror = () => setTimeout(resolve, 400);
+
+    container.appendChild(adScript);
+  });
 }
 
-function initBanners() {
-  injectIframeBanner("banner-320x50-slot", AD_CONFIG.banner320x50);
-  injectIframeBanner("banner-300x250-slot", AD_CONFIG.banner300x250);
+async function initBanners() {
+  await injectIframeBanner("banner-320x50-slot", AD_CONFIG.banner320x50);
+  await injectIframeBanner("banner-300x250-slot", AD_CONFIG.banner300x250);
 }
 
-// Social Bar: র‍্যান্ডমলি ও পরিমিতভাবে লোড হবে (UX নষ্ট না করার জন্য)
+// Social Bar: randomly o porimito-bhabe load hobe (UX nosto na korar jonno)
 function initSocialBarRandomly() {
   const alreadyShownThisSession = sessionStorage.getItem("vs_social_bar_loaded");
   if (alreadyShownThisSession) return;
 
-  // ৬০% সম্ভাবনায় লোড হবে এবং ৩ থেকে ৮ সেকেন্ডের র‍্যান্ডম ডিলেতে আসবে
   const shouldLoad = Math.random() < 0.6;
   if (!shouldLoad) return;
 
@@ -103,7 +102,7 @@ function initSocialBarRandomly() {
   }, randomDelay);
 }
 
-// Popunder: প্রতি ৪টি ভিডিও সুইচ করলে একবার ট্রিগার হবে
+// Popunder: proti 4ti video switch korle ekbar trigger hobe
 function handlePopunderOnVideoSwitch() {
   videoSwitchCount += 1;
 
@@ -120,7 +119,7 @@ function handlePopunderOnVideoSwitch() {
   }
 }
 
-// Native Banner: প্রতি ৪টি ভিডিওর পরপর রেন্ডার হবে
+// Native Banner: proti 4ti video-r porpor render hobe
 function createNativeBannerCard(index) {
   const wrapper = document.createElement("div");
   wrapper.className = "native-ad-card flex flex-col items-center justify-center";
@@ -319,7 +318,7 @@ function renderRecommendations() {
 
     list.appendChild(article);
 
-    // প্রতি ৪টি ভিডিওর পরপর Native Banner যুক্ত করা (৪, ৮, ১২...)
+    // Proti 4ti video-r porpor Native Banner jukto kora (4, 8, 12...)
     if ((idx + 1) % AD_CONFIG.nativeBanner.everyVideos === 0) {
       nativeCount += 1;
       list.appendChild(createNativeBannerCard(nativeCount));
@@ -386,7 +385,7 @@ function showToast(msg) {
 }
 
 async function initVideos() {
-  initBanners();
+  await initBanners();
   initSocialBarRandomly();
 
   try {
