@@ -51,9 +51,35 @@
       border-radius: 0.75rem;
       padding: 0.625rem;
     }
+
+    /* YouTube-Style Draggable Floating Mini Player */
+    #player-box.is-floating {
+      position: fixed;
+      width: 210px;
+      height: 118px;
+      z-index: 60;
+      border-radius: 12px;
+      border: 1.5px solid rgba(255, 51, 75, 0.75);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.85);
+      touch-action: none;
+      cursor: grab;
+      transition: box-shadow 0.2s ease;
+    }
+
+    #player-box.is-floating:active {
+      cursor: grabbing;
+    }
+
+    video::-internal-media-controls-download-button {
+      display: none;
+    }
+
+    video::-webkit-media-controls-enclosure {
+      overflow: hidden;
+    }
   </style>
 </head>
-<body class="bg-[#0D0D11] text-slate-100 font-sans pb-10 antialiased selection:bg-brand-red selection:text-white">
+<body oncontextmenu="return false;" class="bg-[#0D0D11] text-slate-100 font-sans pb-10 antialiased selection:bg-brand-red selection:text-white select-none">
 
   <!-- Top Header -->
   <header class="sticky top-0 z-40 bg-[#0D0D11]/95 backdrop-blur-md border-b border-brand-cardBorder/60 px-3.5 py-2.5 flex items-center justify-between">
@@ -79,7 +105,7 @@
   <!-- Expandable Search Bar -->
   <div id="search-bar-wrapper" class="hidden px-3.5 py-2 bg-[#121218] border-b border-brand-cardBorder">
     <div class="relative flex items-center">
-      <input id="search-input" oninput="handleSearch(this.value)" type="text" placeholder="Search videos, channels, or tags..." class="w-full bg-[#1C1D26] text-xs text-white placeholder-gray-500 rounded-full pl-3.5 pr-8 py-2 border border-brand-cardBorder focus:border-brand-red focus:outline-none" />
+      <input id="search-input" oninput="handleSearch(this.value)" type="text" placeholder="Search videos, channels, or tags..." class="w-full bg-[#1C1D26] text-xs text-white placeholder-gray-500 rounded-full pl-3.5 pr-8 py-2 border border-brand-cardBorder focus:border-brand-red focus:outline-none select-text" />
       <button onclick="clearSearch()" class="absolute right-2.5 text-gray-400 hover:text-white text-xs font-bold" type="button">✕</button>
     </div>
   </div>
@@ -94,30 +120,53 @@
     <button onclick="filterByCategory('Movies')" data-cat="Movies" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition" type="button">Movies</button>
   </nav>
 
-  <!-- TOP BANNER AD SLOT (320x50) -->
-  <div id="top-banner-ad" class="w-full flex justify-center items-center py-2 bg-[#0A0A0E] border-b border-brand-cardBorder/40">
-    <div id="banner-320x50-slot" class="w-[320px] h-[50px] flex items-center justify-center overflow-hidden rounded"></div>
-  </div>
+  <!-- Main Direct Video Player (Loaded BEFORE Ads) -->
+  <section id="player-sentinel" class="w-full max-w-4xl mx-auto">
+    <div id="player-slot-wrapper" class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60 sm:rounded-b-xl">
+      <div id="player-box" class="w-full h-full bg-black overflow-hidden relative">
+        <!-- Floating Mini-Player Top Controls -->
+        <div id="floating-controls" class="hidden absolute top-1.5 left-1.5 right-1.5 z-20 flex items-center justify-between pointer-events-none">
+          <button onclick="scrollToPlayerTop(event)" title="Expand" class="pointer-events-auto bg-black/75 hover:bg-black text-white text-[11px] font-bold px-2 py-0.5 rounded-md border border-white/20 backdrop-blur-sm" type="button">
+            ⤢
+          </button>
+          <span class="text-[9px] font-semibold uppercase tracking-wider bg-black/60 text-gray-200 px-1.5 py-0.5 rounded">Drag</span>
+          <button onclick="dismissFloatingPlayer(event)" title="Close Mini Player" class="pointer-events-auto bg-black/75 hover:bg-brand-red text-white text-[11px] font-bold px-2 py-0.5 rounded-md border border-white/20 backdrop-blur-sm" type="button">
+            ✕
+          </button>
+        </div>
 
-  <!-- Main Direct Video Player -->
-  <section class="w-full max-w-4xl mx-auto">
-    <div class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60 sm:rounded-b-xl">
-      <video
-        id="main-video-player"
-        class="w-full h-full object-contain bg-black hidden"
-        controls
-        playsinline
-        preload="metadata"
-        controlsList="nodownload">
-        Your browser does not support the HTML5 video tag.
-      </video>
+        <video
+          id="main-video-player"
+          class="w-full h-full object-contain bg-black hidden"
+          controls
+          playsinline
+          preload="auto"
+          disablePictureInPicture
+          controlsList="nodownload noremoteplayback"
+          oncontextmenu="return false;">
+          Your browser does not support the HTML5 video tag.
+        </video>
 
-      <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
-        <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
-        <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
+        <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
+          <p class="text-sm font-bold text-gray-200 mb-1">Loading Video...</p>
+          <p class="text-xs text-gray-400">Fetching stream from <code class="text-gray-200">videos.json</code></p>
+        </div>
+      </div>
+
+      <!-- Placeholder shown in original spot while floating -->
+      <div id="floating-dock-notice" class="hidden w-full h-full flex flex-col items-center justify-center bg-[#121218] text-gray-400 text-xs">
+        <p class="mb-2">Playing in mini-player</p>
+        <button onclick="scrollToPlayerTop(event)" class="px-3 py-1.5 rounded-full bg-[#1F202B] text-white font-semibold border border-brand-cardBorder" type="button">
+          Return to Player
+        </button>
       </div>
     </div>
   </section>
+
+  <!-- TOP BANNER AD SLOT (320x50 - Loads AFTER Video) -->
+  <div id="top-banner-ad" class="w-full flex justify-center items-center py-2 bg-[#0A0A0E] border-b border-brand-cardBorder/40">
+    <div id="banner-320x50-slot" class="w-[320px] h-[50px] flex items-center justify-center overflow-hidden rounded"></div>
+  </div>
 
   <!-- Video Details & Channel -->
   <section id="video-details-section" class="max-w-4xl mx-auto px-3.5 pt-3 pb-2 hidden">
@@ -148,7 +197,7 @@
     </div>
   </section>
 
-  <!-- Action Bar (Like / Dislike / Favorite) -->
+  <!-- Action Bar (Like / Dislike / Favorite / Share) -->
   <section id="video-actions-section" class="max-w-4xl mx-auto px-3.5 py-1.5 overflow-x-auto no-scrollbar hidden">
     <div class="flex items-center space-x-2 text-xs font-semibold">
       <div class="inline-flex items-center rounded-full bg-[#181822] border border-brand-cardBorder text-gray-200">
@@ -171,6 +220,17 @@
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
         </svg>
         <span class="text-[11px]">Favorite</span>
+      </button>
+
+      <button id="share-btn" onclick="shareCurrentVideo()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#181822] border border-brand-cardBorder text-gray-200 hover:text-white whitespace-nowrap active:scale-95 transition" type="button">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+        <span class="text-[11px]">Share</span>
       </button>
     </div>
   </section>
@@ -213,7 +273,7 @@
   </section>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden bg-[#1F202B] text-white text-xs font-semibold px-4 py-2.5 rounded-full border border-brand-red/50 shadow-xl">
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[70] hidden bg-[#1F202B] text-white text-xs font-semibold px-4 py-2.5 rounded-full border border-brand-red/50 shadow-xl">
     Notification
   </div>
 
@@ -224,7 +284,20 @@
     const DEFAULT_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR";
 
     // ==========================================
-    // AD CONFIGURATION
+    // 3. ANTI-DOWNLOAD / SHORTCUT BLOCKING
+    // ==========================================
+    document.addEventListener("keydown", (e) => {
+      if (
+        (e.ctrlKey && (e.key === "s" || e.key === "S" || e.key === "u" || e.key === "U")) ||
+        (e.ctrlKey && e.shiftKey && (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J")) ||
+        e.key === "F12"
+      ) {
+        e.preventDefault();
+      }
+    });
+
+    // ==========================================
+    // AD CONFIGURATION (Loaded AFTER Video)
     // ==========================================
     const AD_CONFIG = {
       popunderSrc: "https://abscloud.org/1/e6025b2f6245af1cdbbac6851eb3c2b8",
@@ -255,6 +328,8 @@
     let searchQuery = "";
     let videoSwitchCount = 0;
     let popunderLoadedCount = 0;
+    let isFloating = false;
+    let floatingDismissed = false;
 
     let userState = JSON.parse(localStorage.getItem("vs_user_state")) || {
       likes: {},
@@ -265,6 +340,129 @@
 
     function saveUserState() {
       localStorage.setItem("vs_user_state", JSON.stringify(userState));
+    }
+
+    // ==========================================
+    // 2. YOUTUBE-STYLE FLOATING & DRAGGABLE MINI PLAYER
+    // ==========================================
+    function setupFloatingMiniPlayer() {
+      const sentinel = document.getElementById("player-sentinel");
+      const playerBox = document.getElementById("player-box");
+      const floatingControls = document.getElementById("floating-controls");
+      const dockNotice = document.getElementById("floating-dock-notice");
+
+      window.addEventListener("scroll", () => {
+        if (!currentVideoId) return;
+        const rect = sentinel.getBoundingClientRect();
+
+        if (rect.bottom < 60) {
+          if (!isFloating && !floatingDismissed) {
+            isFloating = true;
+            playerBox.classList.add("is-floating");
+            floatingControls.classList.remove("hidden");
+            dockNotice.classList.remove("hidden");
+
+            if (!playerBox.dataset.positioned) {
+              playerBox.style.left = `${Math.max(12, window.innerWidth - 224)}px`;
+              playerBox.style.top = `${Math.max(70, window.innerHeight - 145)}px`;
+            }
+          }
+        } else {
+          floatingDismissed = false;
+          if (isFloating) {
+            exitFloatingMode();
+          }
+        }
+      }, { passive: true });
+
+      // Drag support (Touch + Mouse)
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+      let origLeft = 0;
+      let origTop = 0;
+
+      function onDragStart(clientX, clientY) {
+        if (!isFloating) return;
+        dragging = true;
+        startX = clientX;
+        startY = clientY;
+        const rect = playerBox.getBoundingClientRect();
+        origLeft = rect.left;
+        origTop = rect.top;
+      }
+
+      function onDragMove(clientX, clientY) {
+        if (!dragging || !isFloating) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        const maxLeft = window.innerWidth - playerBox.offsetWidth - 8;
+        const maxTop = window.innerHeight - playerBox.offsetHeight - 8;
+        const nextLeft = Math.min(Math.max(8, origLeft + dx), maxLeft);
+        const nextTop = Math.min(Math.max(56, origTop + dy), maxTop);
+
+        playerBox.style.left = `${nextLeft}px`;
+        playerBox.style.top = `${nextTop}px`;
+        playerBox.dataset.positioned = "1";
+      }
+
+      function onDragEnd() {
+        dragging = false;
+      }
+
+      playerBox.addEventListener("touchstart", (e) => {
+        if (e.target.tagName === "BUTTON") return;
+        const t = e.touches[0];
+        onDragStart(t.clientX, t.clientY);
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (e) => {
+        if (!dragging) return;
+        const t = e.touches[0];
+        onDragMove(t.clientX, t.clientY);
+      }, { passive: true });
+
+      window.addEventListener("touchend", onDragEnd);
+
+      playerBox.addEventListener("mousedown", (e) => {
+        if (e.target.tagName === "BUTTON") return;
+        onDragStart(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        onDragMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("mouseup", onDragEnd);
+    }
+
+    function exitFloatingMode() {
+      const playerBox = document.getElementById("player-box");
+      const floatingControls = document.getElementById("floating-controls");
+      const dockNotice = document.getElementById("floating-dock-notice");
+
+      isFloating = false;
+      playerBox.classList.remove("is-floating");
+      playerBox.style.left = "";
+      playerBox.style.top = "";
+      floatingControls.classList.add("hidden");
+      dockNotice.classList.add("hidden");
+    }
+
+    function scrollToPlayerTop(e) {
+      if (e) e.stopPropagation();
+      floatingDismissed = false;
+      exitFloatingMode();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function dismissFloatingPlayer(e) {
+      if (e) e.stopPropagation();
+      const player = document.getElementById("main-video-player");
+      player.pause();
+      floatingDismissed = true;
+      exitFloatingMode();
     }
 
     // ==========================================
@@ -288,18 +486,19 @@
         const adScript = document.createElement("script");
         adScript.type = "text/javascript";
         adScript.src = config.src;
-        adScript.async = false;
+        adScript.async = true;
 
-        adScript.onload = () => setTimeout(resolve, 400);
-        adScript.onerror = () => setTimeout(resolve, 400);
+        adScript.onload = () => setTimeout(resolve, 300);
+        adScript.onerror = () => setTimeout(resolve, 300);
 
         container.appendChild(adScript);
       });
     }
 
-    async function initBanners() {
+    async function initAdsAfterVideo() {
       await injectIframeBanner("banner-320x50-slot", AD_CONFIG.banner320x50);
       await injectIframeBanner("banner-300x250-slot", AD_CONFIG.banner300x250);
+      initSocialBarRandomly();
     }
 
     function initSocialBarRandomly() {
@@ -365,10 +564,38 @@
     }
 
     // ==========================================
-    // VIDEO PLAYER & UI LOGIC
+    // VIDEO PLAYER, SHARE LINK & UI LOGIC
     // ==========================================
     function getVideoSource(vid) {
       return (vid && (vid.videoUrl || vid.url)) || "";
+    }
+
+    function updateShareUrlParam(id) {
+      if (!id) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set("v", id);
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    function shareCurrentVideo() {
+      if (!currentVideoId) return;
+      const vid = videos.find(v => v.id === currentVideoId);
+      const shareUrl = `${window.location.origin}${window.location.pathname}?v=${encodeURIComponent(currentVideoId)}`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: vid ? vid.title : "Watch Video",
+          url: shareUrl
+        }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showToast("Video share link copied!");
+        }).catch(() => {
+          showToast(shareUrl);
+        });
+      } else {
+        showToast("Share link ready in address bar");
+      }
     }
 
     function loadVideo(id, isUserSwitch = false) {
@@ -378,7 +605,7 @@
       const actionsSec = document.getElementById("video-actions-section");
       const descSec = document.getElementById("video-desc-section");
 
-      const vid = videos.find(v => v.id === id) || videos[0];
+      const vid = videos.find(v => String(v.id) === String(id)) || videos[0];
       const streamUrl = getVideoSource(vid);
 
       if (!vid || !streamUrl) {
@@ -387,6 +614,10 @@
         player.removeAttribute("src");
         player.load();
         player.classList.add("hidden");
+        placeholder.innerHTML = `
+          <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
+          <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
+        `;
         placeholder.classList.remove("hidden");
         detailsSec.classList.add("hidden");
         actionsSec.classList.add("hidden");
@@ -400,6 +631,8 @@
       }
 
       currentVideoId = vid.id;
+      updateShareUrlParam(vid.id);
+
       player.classList.remove("hidden");
       placeholder.classList.add("hidden");
       detailsSec.classList.remove("hidden");
@@ -426,7 +659,9 @@
 
       updateInteractionUI();
       renderRecommendations();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (isUserSwitch) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
 
     document.getElementById("main-video-player").addEventListener("error", () => {
@@ -541,7 +776,7 @@
         article.innerHTML = `
           <div class="relative w-36 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-slate-800">
             <img alt="${v.title}" class="w-full h-full object-cover" src="${v.thumbnail || DEFAULT_THUMB}" />
-            ${isPlaying ? '<span class="absolute top-1 left-1 bg-brand-red text-white font-bold text-[9px] px-1.5 py-0.5 rounded">PLAYING</span>' : '<span class="absolute top-1 left-1 bg-black/75 text-white font-bold text-[9px] px-1 rounded">MP4</span>'}
+            ${isPlaying ? '<span class="absolute top-1 left-1 bg-brand-red text-white font-bold text-[9px] px-1.5 py-0.5 rounded">PLAYING</span>' : '<span class="absolute top-1 left-1 bg-black/75 text-white font-bold text-[9px] px-1 rounded">VIDEO</span>'}
             <span class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-mono px-1 rounded">${v.duration || "HD"}</span>
           </div>
           <div class="flex flex-col justify-between py-0.5 min-w-0 flex-1">
@@ -620,9 +855,11 @@
       window._toastTimer = setTimeout(() => toast.classList.add("hidden"), 2400);
     }
 
+    // ==========================================
+    // 1. PRIORITY INIT: LOAD VIDEO FIRST, ADS AFTER
+    // ==========================================
     async function initVideos() {
-      await initBanners();
-      initSocialBarRandomly();
+      setupFloatingMiniPlayer();
 
       try {
         const res = await fetch("./videos.json", { cache: "no-store" });
@@ -635,8 +872,18 @@
         showToast("Could not load videos.json");
       }
 
-      currentVideoId = videos.length > 0 ? videos[0].id : null;
-      loadVideo(currentVideoId, false);
+      // Check shared video ID from URL (?v=1)
+      const params = new URLSearchParams(window.location.search);
+      const sharedId = params.get("v");
+      const initialId = sharedId || (videos.length > 0 ? videos[0].id : null);
+
+      // Load video & UI first
+      loadVideo(initialId, false);
+
+      // Load ads after video is initialized
+      setTimeout(() => {
+        initAdsAfterVideo();
+      }, 600);
     }
 
     initVideos();
