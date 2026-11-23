@@ -28,124 +28,6 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body class="bg-[#0D0D11] text-slate-100 font-sans pb-10 antialiased selection:bg-brand-red selection:text-white">
-
-  <!-- Top Header -->
-  <header class="sticky top-0 z-40 bg-[#0D0D11]/95 backdrop-blur-md border-b border-brand-cardBorder/60 px-3.5 py-2.5 flex items-center justify-between">
-    <div onclick="resetFilters()" class="flex items-center space-x-2 cursor-pointer">
-      <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-red-500 flex items-center justify-center shadow-lg shadow-red-500/20 text-lg">
-        🦊
-      </div>
-      <div class="flex items-center tracking-tight font-black text-lg">
-        <span class="text-brand-red">VIDEO</span><span class="text-white">SHARE</span>
-      </div>
-    </div>
-
-    <div class="flex items-center space-x-2.5">
-      <button onclick="toggleSearch()" aria-label="Search" class="p-2 text-gray-300 hover:text-white bg-[#181822] border border-brand-cardBorder rounded-full active:scale-95 transition" type="button">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" x2="16.65" y1="21" y2="16.65"></line>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Expandable Search Bar -->
-  <div id="search-bar-wrapper" class="hidden px-3.5 py-2 bg-[#121218] border-b border-brand-cardBorder">
-    <div class="relative flex items-center">
-      <input id="search-input" oninput="handleSearch(this.value)" type="text" placeholder="Search videos, channels, or tags..." class="w-full bg-[#1C1D26] text-xs text-white placeholder-gray-500 rounded-full pl-3.5 pr-8 py-2 border border-brand-cardBorder focus:border-brand-red focus:outline-none" />
-      <button onclick="clearSearch()" class="absolute right-2.5 text-gray-400 hover:text-white text-xs font-bold">✕</button>
-    </div>
-  </div>
-
-  <!-- Category Filter Chips -->
-  <nav id="category-nav" aria-label="Categories" class="flex items-center space-x-2 px-3.5 py-2.5 overflow-x-auto no-scrollbar border-b border-brand-cardBorder/40 text-xs font-medium bg-[#111116]">
-    <button onclick="filterByCategory('All')" data-cat="All" class="cat-chip px-3.5 py-1.5 rounded-full bg-white text-black font-semibold whitespace-nowrap transition">All</button>
-    <button onclick="filterByCategory('Animation')" data-cat="Animation" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition">Animation</button>
-    <button onclick="filterByCategory('3D')" data-cat="3D" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition">3D</button>
-    <button onclick="filterByCategory('Sci-Fi')" data-cat="Sci-Fi" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition">Sci-Fi</button>
-    <button onclick="filterByCategory('Gaming')" data-cat="Gaming" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition">Gaming</button>
-    <button onclick="filterByCategory('Movies')" data-cat="Movies" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition">Movies</button>
-  </nav>
-
-  <!-- TOP BANNER AD SLOT (320x50) -->
-  <div id="top-banner-ad" class="w-full flex justify-center items-center py-2 bg-[#0A0A0E] border-b border-brand-cardBorder/40">
-    <div id="banner-320x50-slot" class="w-[320px] h-[50px] flex items-center justify-center overflow-hidden rounded"></div>
-  </div>
-
-  <!-- Main Embedded Video Player -->
-  <section class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60">
-    <iframe
-      id="main-embed-player"
-      class="w-full h-full border-0 hidden"
-      src=""
-      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-      referrerpolicy="no-referrer-when-downgrade"
-      frameborder="0"
-      scrolling="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-      allowfullscreen>
-    </iframe>
-
-    <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
-      <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
-      <p class="text-xs text-gray-400">Add video entries inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
-    </div>
-  </section>
-
-  <!-- Video Details & Channel -->
-  <section id="video-details-section" class="px-3.5 pt-3 pb-2 hidden">
-    <div class="mb-2">
-      <h1 id="video-title" class="text-base font-bold text-white tracking-tight leading-snug"></h1>
-      <div id="video-hashtags" class="flex flex-wrap items-center gap-1.5 text-[11px] text-brand-red font-medium mt-1"></div>
-    </div>
-
-    <div class="flex items-center justify-between py-2 border-y border-brand-cardBorder/60 my-2">
-      <div class="flex items-center space-x-2.5">
-        <div class="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-brand-red/80 bg-slate-800 flex items-center justify-center font-bold text-sm text-white">
-          <img id="channel-avatar" alt="Channel Avatar" class="w-full h-full object-cover" src="" />
-        </div>
-        <div>
-          <div class="flex items-center space-x-1">
-            <span id="channel-name" class="text-sm font-bold text-white"></span>
-            <svg class="w-3.5 h-3.5 text-brand-red fill-current" viewBox="0 0 20 20">
-              <path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path>
-            </svg>
-          </div>
-          <span id="channel-subs" class="text-[11px] text-gray-400"></span>
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-  <meta charset="utf-8" />
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
-  <title>VideoShare - Watch</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              red: '#FF334B',
-              crimson: '#E50914',
-              orange: '#FF5E3A',
-              dark: '#0D0D11',
-              card: '#16161E',
-              cardBorder: '#252533',
-              tagBg: '#1F202B'
-            }
-          },
-          fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
   <style>
     .no-scrollbar::-webkit-scrollbar {
       display: none;
@@ -218,25 +100,27 @@
   </div>
 
   <!-- Main Direct Video Player -->
-  <section class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60">
-    <video
-      id="main-video-player"
-      class="w-full h-full object-contain bg-black hidden"
-      controls
-      playsinline
-      preload="metadata"
-      controlsList="nodownload">
-      Your browser does not support the HTML5 video tag.
-    </video>
+  <section class="w-full max-w-4xl mx-auto">
+    <div class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60 sm:rounded-b-xl">
+      <video
+        id="main-video-player"
+        class="w-full h-full object-contain bg-black hidden"
+        controls
+        playsinline
+        preload="metadata"
+        controlsList="nodownload">
+        Your browser does not support the HTML5 video tag.
+      </video>
 
-    <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
-      <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
-      <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">VIDEOS_JSON</code> in this file.</p>
+      <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
+        <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
+        <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
+      </div>
     </div>
   </section>
 
   <!-- Video Details & Channel -->
-  <section id="video-details-section" class="px-3.5 pt-3 pb-2 hidden">
+  <section id="video-details-section" class="max-w-4xl mx-auto px-3.5 pt-3 pb-2 hidden">
     <div class="mb-2">
       <h1 id="video-title" class="text-base font-bold text-white tracking-tight leading-snug"></h1>
       <div id="video-hashtags" class="flex flex-wrap items-center gap-1.5 text-[11px] text-brand-red font-medium mt-1"></div>
@@ -244,13 +128,13 @@
 
     <div class="flex items-center justify-between py-2 border-y border-brand-cardBorder/60 my-2">
       <div class="flex items-center space-x-2.5">
-        <div class="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-brand-red/80 bg-slate-800 flex items-center justify-center font-bold text-sm text-white">
+        <div class="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-brand-red/80 bg-slate-800 flex items-center justify-center font-bold text-sm text-white shrink-0">
           <img id="channel-avatar" alt="Channel Avatar" class="w-full h-full object-cover" src="" />
         </div>
         <div>
           <div class="flex items-center space-x-1">
             <span id="channel-name" class="text-sm font-bold text-white"></span>
-            <svg class="w-3.5 h-3.5 text-brand-red fill-current" viewBox="0 0 20 20">
+            <svg class="w-3.5 h-3.5 text-brand-red fill-current shrink-0" viewBox="0 0 20 20">
               <path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path>
             </svg>
           </div>
@@ -258,14 +142,14 @@
         </div>
       </div>
 
-      <button id="subscribe-btn" onclick="toggleSubscribe()" class="px-4 py-1.5 bg-brand-crimson hover:bg-red-600 active:scale-95 text-white text-xs font-bold rounded-full shadow-md shadow-brand-crimson/30 transition" type="button">
+      <button id="subscribe-btn" onclick="toggleSubscribe()" class="px-4 py-1.5 bg-brand-crimson hover:bg-red-600 active:scale-95 text-white text-xs font-bold rounded-full shadow-md shadow-brand-crimson/30 transition shrink-0" type="button">
         Subscribe
       </button>
     </div>
   </section>
 
   <!-- Action Bar (Like / Dislike / Favorite) -->
-  <section id="video-actions-section" class="px-3.5 py-1.5 overflow-x-auto no-scrollbar hidden">
+  <section id="video-actions-section" class="max-w-4xl mx-auto px-3.5 py-1.5 overflow-x-auto no-scrollbar hidden">
     <div class="flex items-center space-x-2 text-xs font-semibold">
       <div class="inline-flex items-center rounded-full bg-[#181822] border border-brand-cardBorder text-gray-200">
         <button id="like-btn" onclick="toggleLike()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 hover:text-white active:scale-95 border-r border-brand-cardBorder transition" type="button">
@@ -292,8 +176,8 @@
   </section>
 
   <!-- Expandable Description -->
-  <section id="video-desc-section" class="px-3.5 my-2 hidden">
-    <div onclick="toggleDescription()" class="bg-[#15151D] border border-brand-cardBorder/70 rounded-xl p-3 text-xs text-gray-300 cursor-pointer">
+  <section id="video-desc-section" class="max-w-4xl mx-auto px-3.5 my-2 hidden">
+    <div onclick="toggleDescription()" class="bg-[#15151D] border border-brand-cardBorder/70 rounded-xl p-3 text-xs text-gray-300 cursor-pointer hover:border-brand-cardBorder transition">
       <div class="flex items-center justify-between font-semibold text-white mb-1.5">
         <div class="flex items-center space-x-2">
           <span id="video-views"></span>
@@ -307,12 +191,12 @@
   </section>
 
   <!-- MIDDLE BANNER AD SLOT (300x250) -->
-  <div id="middle-banner-ad" class="px-3.5 my-3 flex justify-center">
+  <div id="middle-banner-ad" class="max-w-4xl mx-auto px-3.5 my-3 flex justify-center">
     <div id="banner-300x250-slot" class="w-[300px] h-[250px] flex items-center justify-center overflow-hidden rounded-xl bg-[#13131A] border border-brand-cardBorder/60"></div>
   </div>
 
   <!-- Up Next Recommendations Feed -->
-  <section class="px-3.5 pt-2">
+  <section class="max-w-4xl mx-auto px-3.5 pt-2">
     <div class="flex items-center justify-between mb-2.5">
       <div class="flex items-center space-x-2">
         <h2 class="text-sm font-bold text-white">Up Next</h2>
@@ -335,53 +219,6 @@
 
   <!-- Social Bar & Popunder Dynamic Container -->
   <div id="ad-scripts-container" class="hidden"></div>
-
-  <!-- ==========================================
-       VIDEOS JSON DATA (Direct MP4 / Stream URLs)
-       ========================================== -->
-  <script id="videos-json-data" type="application/json">
-[
-  {
-    "id": 1,
-    "title": "Cloudflare R2 Object Storage Tutorial",
-    "videoUrl": "https://pub-82546b5cc3aa49658781e803768a40d5.r2.dev/vd6s.net%20Cloudflare%20R2%20Object%20Storage%20Tutorial_%20Create%20Bucket%20%26%20Custom%20Domain%20Setup_1080p50.mp4",
-    "creator": "My Channel",
-    "subs": "Creator",
-    "category": "Sci-Fi",
-    "hashtags": [
-      "#CloudflareR2",
-      "#1080p50",
-      "#Tutorial"
-    ],
-    "views": "1.2K",
-    "date": "2026-11-21",
-    "duration": "1080p",
-    "likes": 25,
-    "dislikes": 0,
-    "thumbnail": "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR",
-    "description": "Direct MP4 playback from Cloudflare R2 bucket."
-  },
-  {
-    "id": 2,
-    "title": "Second Video Example",
-    "videoUrl": "https://pub-82546b5cc3aa49658781e803768a40d5.r2.dev/vd6s.net%20Cloudflare%20R2%20Object%20Storage%20Tutorial_%20Create%20Bucket%20%26%20Custom%20Domain%20Setup_1080p50.mp4",
-    "creator": "My Channel",
-    "subs": "Creator",
-    "category": "Animation",
-    "hashtags": [
-      "#Animation",
-      "#HD"
-    ],
-    "views": "850",
-    "date": "2026-11-22",
-    "duration": "HD",
-    "likes": 18,
-    "dislikes": 0,
-    "thumbnail": "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR",
-    "description": "Replace videoUrl with any direct .mp4 / .webm link."
-  }
-]
-  </script>
 
   <script>
     const DEFAULT_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR";
@@ -531,7 +368,7 @@
     // VIDEO PLAYER & UI LOGIC
     // ==========================================
     function getVideoSource(vid) {
-      return (vid && (vid.videoUrl || vid.url || vid.embedUrl)) || "";
+      return (vid && (vid.videoUrl || vid.url)) || "";
     }
 
     function loadVideo(id, isUserSwitch = false) {
@@ -592,6 +429,10 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    document.getElementById("main-video-player").addEventListener("error", () => {
+      showToast("Video link could not play");
+    });
+
     function updateInteractionUI() {
       const vid = videos.find(v => v.id === currentVideoId);
       if (!vid) return;
@@ -617,10 +458,10 @@
       const subBtn = document.getElementById("subscribe-btn");
       if (isSub) {
         subBtn.textContent = "Subscribed";
-        subBtn.className = "px-4 py-1.5 bg-[#252533] text-gray-200 text-xs font-bold rounded-full transition";
+        subBtn.className = "px-4 py-1.5 bg-[#252533] text-gray-200 text-xs font-bold rounded-full transition shrink-0";
       } else {
         subBtn.textContent = "Subscribe";
-        subBtn.className = "px-4 py-1.5 bg-brand-crimson hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-md shadow-brand-crimson/30 transition";
+        subBtn.className = "px-4 py-1.5 bg-brand-crimson hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-md shadow-brand-crimson/30 transition shrink-0";
       }
     }
 
@@ -684,7 +525,7 @@
       document.getElementById("queue-count").textContent = `${filtered.length} Video${filtered.length === 1 ? "" : "s"}`;
 
       if (filtered.length === 0) {
-        list.innerHTML = `<div class="text-center py-8 text-xs text-gray-400 bg-[#13131A] rounded-xl border border-brand-cardBorder/60">No videos found.</div>`;
+        list.innerHTML = `<div class="text-center py-8 text-xs text-gray-400 bg-[#13131A] rounded-xl border border-brand-cardBorder/60">No videos found in videos.json.</div>`;
         return;
       }
 
@@ -784,13 +625,14 @@
       initSocialBarRandomly();
 
       try {
-        const rawJson = document.getElementById("videos-json-data").textContent;
-        const data = JSON.parse(rawJson);
+        const res = await fetch("./videos.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
         videos = Array.isArray(data) ? data : [];
       } catch (err) {
-        console.error("Failed to parse videos JSON:", err);
+        console.error("Failed to load videos.json:", err);
         videos = [];
-        showToast("Invalid videos JSON format");
+        showToast("Could not load videos.json");
       }
 
       currentVideoId = videos.length > 0 ? videos[0].id : null;
@@ -799,10 +641,5 @@
 
     initVideos();
   </script>
-</body>
-  </html>
-" class="hidden"></div>
-
-  <script src="./app.js"></script>
 </body>
 </html>
