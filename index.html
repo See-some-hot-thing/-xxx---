@@ -52,18 +52,17 @@
       padding: 0.625rem;
     }
 
-    /* YouTube-Style Draggable Floating Mini Player */
+    /* Upgraded Floating Mini Player (Right / Upper-Middle Zone) */
     #player-box.is-floating {
       position: fixed;
-      width: 210px;
-      height: 118px;
+      width: 212px;
+      height: 119px;
       z-index: 60;
       border-radius: 12px;
-      border: 1.5px solid rgba(255, 51, 75, 0.75);
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.85);
+      border: 1.5px solid rgba(255, 51, 75, 0.8);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.88);
       touch-action: none;
       cursor: grab;
-      transition: box-shadow 0.2s ease;
     }
 
     #player-box.is-floating:active {
@@ -120,32 +119,57 @@
     <button onclick="filterByCategory('Movies')" data-cat="Movies" class="cat-chip px-3.5 py-1.5 rounded-full bg-[#1C1C24] text-gray-300 whitespace-nowrap border border-brand-cardBorder transition" type="button">Movies</button>
   </nav>
 
-  <!-- Main Direct Video Player (Loaded BEFORE Ads) -->
+  <!-- TOP BANNER AD SLOT (320x50 - Above Video Player) -->
+  <div id="top-banner-ad" class="w-full flex justify-center items-center py-2 bg-[#0A0A0E] border-b border-brand-cardBorder/40">
+    <div id="banner-320x50-slot" class="w-[320px] h-[50px] flex items-center justify-center overflow-hidden rounded"></div>
+  </div>
+
+  <!-- Upgraded Direct Video Player (Play/Pause Only, No Seek/Skip Controls) -->
   <section id="player-sentinel" class="w-full max-w-4xl mx-auto">
     <div id="player-slot-wrapper" class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60 sm:rounded-b-xl">
-      <div id="player-box" class="w-full h-full bg-black overflow-hidden relative">
-        <!-- Floating Mini-Player Top Controls -->
-        <div id="floating-controls" class="hidden absolute top-1.5 left-1.5 right-1.5 z-20 flex items-center justify-between pointer-events-none">
-          <button onclick="scrollToPlayerTop(event)" title="Expand" class="pointer-events-auto bg-black/75 hover:bg-black text-white text-[11px] font-bold px-2 py-0.5 rounded-md border border-white/20 backdrop-blur-sm" type="button">
-            ⤢
-          </button>
-          <span class="text-[9px] font-semibold uppercase tracking-wider bg-black/60 text-gray-200 px-1.5 py-0.5 rounded">Drag</span>
-          <button onclick="dismissFloatingPlayer(event)" title="Close Mini Player" class="pointer-events-auto bg-black/75 hover:bg-brand-red text-white text-[11px] font-bold px-2 py-0.5 rounded-md border border-white/20 backdrop-blur-sm" type="button">
-            ✕
-          </button>
-        </div>
-
+      <div id="player-box" onclick="togglePlayPause()" class="w-full h-full bg-black overflow-hidden relative">
         <video
           id="main-video-player"
-          class="w-full h-full object-contain bg-black hidden"
-          controls
+          class="w-full h-full object-contain bg-black hidden pointer-events-none"
           playsinline
           preload="auto"
           disablePictureInPicture
-          controlsList="nodownload noremoteplayback"
           oncontextmenu="return false;">
           Your browser does not support the HTML5 video tag.
         </video>
+
+        <!-- Buffering Spinner -->
+        <div id="video-buffering" class="hidden absolute inset-0 z-10 flex items-center justify-center bg-black/35 pointer-events-none">
+          <div class="w-8 h-8 rounded-full border-2 border-white/25 border-t-brand-red animate-spin"></div>
+        </div>
+
+        <!-- Minimal Play / Pause Control Overlay (No Forward/Backward/Seek) -->
+        <div id="custom-player-overlay" class="hidden absolute inset-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/55 via-transparent to-black/35">
+          <button
+            id="play-pause-btn"
+            onclick="handlePlayPauseClick(event)"
+            aria-label="Play or Pause"
+            class="w-10 h-10 rounded-full bg-black/70 hover:bg-brand-red text-white flex items-center justify-center border border-white/20 backdrop-blur-sm active:scale-95 transition"
+            type="button">
+            <!-- Play Icon -->
+            <svg id="icon-play" class="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"></path>
+            </svg>
+            <!-- Pause Icon -->
+            <svg id="icon-pause" class="w-4 h-4 fill-current hidden" viewBox="0 0 24 24">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+            </svg>
+          </button>
+
+          <button
+            id="expand-floating-btn"
+            onclick="scrollToPlayerTop(event)"
+            title="Expand Player"
+            class="hidden px-2.5 py-1 rounded-full bg-black/70 hover:bg-white hover:text-black text-white text-[11px] font-bold border border-white/20 backdrop-blur-sm transition"
+            type="button">
+            ⤢
+          </button>
+        </div>
 
         <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
           <p class="text-sm font-bold text-gray-200 mb-1">Loading Video...</p>
@@ -153,20 +177,15 @@
         </div>
       </div>
 
-      <!-- Placeholder shown in original spot while floating -->
+      <!-- Docked Notice While Floating -->
       <div id="floating-dock-notice" class="hidden w-full h-full flex flex-col items-center justify-center bg-[#121218] text-gray-400 text-xs">
-        <p class="mb-2">Playing in mini-player</p>
+        <p class="mb-2">Playing in floating window</p>
         <button onclick="scrollToPlayerTop(event)" class="px-3 py-1.5 rounded-full bg-[#1F202B] text-white font-semibold border border-brand-cardBorder" type="button">
-          Return to Player
+          Bring Back Here
         </button>
       </div>
     </div>
   </section>
-
-  <!-- TOP BANNER AD SLOT (320x50 - Loads AFTER Video) -->
-  <div id="top-banner-ad" class="w-full flex justify-center items-center py-2 bg-[#0A0A0E] border-b border-brand-cardBorder/40">
-    <div id="banner-320x50-slot" class="w-[320px] h-[50px] flex items-center justify-center overflow-hidden rounded"></div>
-  </div>
 
   <!-- Video Details & Channel -->
   <section id="video-details-section" class="max-w-4xl mx-auto px-3.5 pt-3 pb-2 hidden">
@@ -284,7 +303,7 @@
     const DEFAULT_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR";
 
     // ==========================================
-    // 3. ANTI-DOWNLOAD / SHORTCUT BLOCKING
+    // ANTI-DOWNLOAD / SHORTCUT BLOCKING
     // ==========================================
     document.addEventListener("keydown", (e) => {
       if (
@@ -293,6 +312,10 @@
         e.key === "F12"
       ) {
         e.preventDefault();
+      }
+      if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && currentVideoId) {
+        e.preventDefault();
+        togglePlayPause();
       }
     });
 
@@ -329,7 +352,7 @@
     let videoSwitchCount = 0;
     let popunderLoadedCount = 0;
     let isFloating = false;
-    let floatingDismissed = false;
+    let overlayHideTimer = null;
 
     let userState = JSON.parse(localStorage.getItem("vs_user_state")) || {
       likes: {},
@@ -343,40 +366,87 @@
     }
 
     // ==========================================
-    // 2. YOUTUBE-STYLE FLOATING & DRAGGABLE MINI PLAYER
+    // UPGRADED PLAYER CONTROLS (PLAY / PAUSE ONLY)
+    // ==========================================
+    function syncPlayPauseIcon() {
+      const player = document.getElementById("main-video-player");
+      const playIcon = document.getElementById("icon-play");
+      const pauseIcon = document.getElementById("icon-pause");
+      const isPaused = player.paused || player.ended;
+
+      playIcon.classList.toggle("hidden", !isPaused);
+      pauseIcon.classList.toggle("hidden", isPaused);
+    }
+
+    function showPlayerOverlayTemporarily() {
+      const overlay = document.getElementById("custom-player-overlay");
+      const player = document.getElementById("main-video-player");
+      if (!currentVideoId) return;
+
+      overlay.classList.remove("hidden");
+      clearTimeout(overlayHideTimer);
+
+      if (!player.paused && !player.ended) {
+        overlayHideTimer = setTimeout(() => {
+          overlay.classList.add("hidden");
+        }, 2200);
+      }
+    }
+
+    function togglePlayPause() {
+      const player = document.getElementById("main-video-player");
+      if (!currentVideoId || !player.src) return;
+
+      if (player.paused || player.ended) {
+        player.play().catch(() => {});
+      } else {
+        player.pause();
+      }
+      syncPlayPauseIcon();
+      showPlayerOverlayTemporarily();
+    }
+
+    function handlePlayPauseClick(e) {
+      if (e) e.stopPropagation();
+      togglePlayPause();
+    }
+
+    // ==========================================
+    // FLOATING MINI PLAYER (RIGHT / TOP-MID ZONE)
     // ==========================================
     function setupFloatingMiniPlayer() {
       const sentinel = document.getElementById("player-sentinel");
       const playerBox = document.getElementById("player-box");
-      const floatingControls = document.getElementById("floating-controls");
       const dockNotice = document.getElementById("floating-dock-notice");
+      const expandBtn = document.getElementById("expand-floating-btn");
 
       window.addEventListener("scroll", () => {
         if (!currentVideoId) return;
         const rect = sentinel.getBoundingClientRect();
 
-        if (rect.bottom < 60) {
-          if (!isFloating && !floatingDismissed) {
+        if (rect.bottom < 70) {
+          if (!isFloating) {
             isFloating = true;
             playerBox.classList.add("is-floating");
-            floatingControls.classList.remove("hidden");
             dockNotice.classList.remove("hidden");
+            expandBtn.classList.remove("hidden");
 
             if (!playerBox.dataset.positioned) {
-              playerBox.style.left = `${Math.max(12, window.innerWidth - 224)}px`;
-              playerBox.style.top = `${Math.max(70, window.innerHeight - 145)}px`;
+              const defaultLeft = Math.max(8, window.innerWidth - 224);
+              const defaultTop = Math.max(68, Math.round(window.innerHeight * 0.22));
+              playerBox.style.left = `${defaultLeft}px`;
+              playerBox.style.top = `${defaultTop}px`;
             }
           }
         } else {
-          floatingDismissed = false;
           if (isFloating) {
             exitFloatingMode();
           }
         }
       }, { passive: true });
 
-      // Drag support (Touch + Mouse)
       let dragging = false;
+      let moved = false;
       let startX = 0;
       let startY = 0;
       let origLeft = 0;
@@ -385,6 +455,7 @@
       function onDragStart(clientX, clientY) {
         if (!isFloating) return;
         dragging = true;
+        moved = false;
         startX = clientX;
         startY = clientY;
         const rect = playerBox.getBoundingClientRect();
@@ -396,10 +467,13 @@
         if (!dragging || !isFloating) return;
         const dx = clientX - startX;
         const dy = clientY - startY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+          moved = true;
+        }
         const maxLeft = window.innerWidth - playerBox.offsetWidth - 8;
         const maxTop = window.innerHeight - playerBox.offsetHeight - 8;
         const nextLeft = Math.min(Math.max(8, origLeft + dx), maxLeft);
-        const nextTop = Math.min(Math.max(56, origTop + dy), maxTop);
+        const nextTop = Math.min(Math.max(58, origTop + dy), maxTop);
 
         playerBox.style.left = `${nextLeft}px`;
         playerBox.style.top = `${nextTop}px`;
@@ -408,10 +482,13 @@
 
       function onDragEnd() {
         dragging = false;
+        if (moved) {
+          setTimeout(() => { moved = false; }, 50);
+        }
       }
 
       playerBox.addEventListener("touchstart", (e) => {
-        if (e.target.tagName === "BUTTON") return;
+        if (e.target.closest("button")) return;
         const t = e.touches[0];
         onDragStart(t.clientX, t.clientY);
       }, { passive: true });
@@ -425,7 +502,7 @@
       window.addEventListener("touchend", onDragEnd);
 
       playerBox.addEventListener("mousedown", (e) => {
-        if (e.target.tagName === "BUTTON") return;
+        if (e.target.closest("button")) return;
         onDragStart(e.clientX, e.clientY);
       });
 
@@ -435,34 +512,33 @@
       });
 
       window.addEventListener("mouseup", onDragEnd);
+
+      playerBox.addEventListener("click", (e) => {
+        if (moved) {
+          e.stopPropagation();
+          return;
+        }
+        showPlayerOverlayTemporarily();
+      }, true);
     }
 
     function exitFloatingMode() {
       const playerBox = document.getElementById("player-box");
-      const floatingControls = document.getElementById("floating-controls");
       const dockNotice = document.getElementById("floating-dock-notice");
+      const expandBtn = document.getElementById("expand-floating-btn");
 
       isFloating = false;
       playerBox.classList.remove("is-floating");
       playerBox.style.left = "";
       playerBox.style.top = "";
-      floatingControls.classList.add("hidden");
       dockNotice.classList.add("hidden");
+      expandBtn.classList.add("hidden");
     }
 
     function scrollToPlayerTop(e) {
       if (e) e.stopPropagation();
-      floatingDismissed = false;
       exitFloatingMode();
       window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function dismissFloatingPlayer(e) {
-      if (e) e.stopPropagation();
-      const player = document.getElementById("main-video-player");
-      player.pause();
-      floatingDismissed = true;
-      exitFloatingMode();
     }
 
     // ==========================================
@@ -601,6 +677,7 @@
     function loadVideo(id, isUserSwitch = false) {
       const player = document.getElementById("main-video-player");
       const placeholder = document.getElementById("empty-player-placeholder");
+      const overlay = document.getElementById("custom-player-overlay");
       const detailsSec = document.getElementById("video-details-section");
       const actionsSec = document.getElementById("video-actions-section");
       const descSec = document.getElementById("video-desc-section");
@@ -614,6 +691,7 @@
         player.removeAttribute("src");
         player.load();
         player.classList.add("hidden");
+        overlay.classList.add("hidden");
         placeholder.innerHTML = `
           <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
           <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
@@ -634,6 +712,7 @@
       updateShareUrlParam(vid.id);
 
       player.classList.remove("hidden");
+      overlay.classList.remove("hidden");
       placeholder.classList.add("hidden");
       detailsSec.classList.remove("hidden");
       actionsSec.classList.remove("hidden");
@@ -642,8 +721,15 @@
       player.poster = vid.thumbnail || DEFAULT_THUMB;
       player.src = streamUrl;
       player.load();
+      syncPlayPauseIcon();
+
       if (isUserSwitch) {
-        player.play().catch(() => {});
+        player.play().then(() => {
+          syncPlayPauseIcon();
+          showPlayerOverlayTemporarily();
+        }).catch(() => {
+          syncPlayPauseIcon();
+        });
       }
 
       document.getElementById("video-title").textContent = vid.title || "Untitled Video";
@@ -664,7 +750,27 @@
       }
     }
 
-    document.getElementById("main-video-player").addEventListener("error", () => {
+    const mainVideoEl = document.getElementById("main-video-player");
+    mainVideoEl.addEventListener("play", () => {
+      syncPlayPauseIcon();
+      showPlayerOverlayTemporarily();
+    });
+    mainVideoEl.addEventListener("pause", () => {
+      syncPlayPauseIcon();
+      document.getElementById("custom-player-overlay").classList.remove("hidden");
+    });
+    mainVideoEl.addEventListener("waiting", () => {
+      document.getElementById("video-buffering").classList.remove("hidden");
+    });
+    mainVideoEl.addEventListener("canplay", () => {
+      document.getElementById("video-buffering").classList.add("hidden");
+    });
+    mainVideoEl.addEventListener("playing", () => {
+      document.getElementById("video-buffering").classList.add("hidden");
+      syncPlayPauseIcon();
+    });
+    mainVideoEl.addEventListener("error", () => {
+      document.getElementById("video-buffering").classList.add("hidden");
       showToast("Video link could not play");
     });
 
@@ -856,7 +962,7 @@
     }
 
     // ==========================================
-    // 1. PRIORITY INIT: LOAD VIDEO FIRST, ADS AFTER
+    // PRIORITY INIT: LOAD VIDEO FIRST, ADS AFTER
     // ==========================================
     async function initVideos() {
       setupFloatingMiniPlayer();
@@ -872,15 +978,12 @@
         showToast("Could not load videos.json");
       }
 
-      // Check shared video ID from URL (?v=1)
       const params = new URLSearchParams(window.location.search);
       const sharedId = params.get("v");
       const initialId = sharedId || (videos.length > 0 ? videos[0].id : null);
 
-      // Load video & UI first
       loadVideo(initialId, false);
 
-      // Load ads after video is initialized
       setTimeout(() => {
         initAdsAfterVideo();
       }, 600);
