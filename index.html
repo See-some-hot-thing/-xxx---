@@ -52,11 +52,11 @@
       padding: 0.625rem;
     }
 
-    /* Upgraded Floating Mini Player (Right / Upper-Middle Zone) */
+    /* Mini Player (Opposite / Left Side Default + Draggable) */
     #player-box.is-floating {
       position: fixed;
-      width: 212px;
-      height: 119px;
+      width: 208px;
+      height: 117px;
       z-index: 60;
       border-radius: 12px;
       border: 1.5px solid rgba(255, 51, 75, 0.8);
@@ -124,7 +124,7 @@
     <div id="banner-320x50-slot" class="w-[320px] h-[50px] flex items-center justify-center overflow-hidden rounded"></div>
   </div>
 
-  <!-- Upgraded Direct Video Player (Play/Pause Only, No Seek/Skip Controls) -->
+  <!-- Custom Clean Video Player (Play & Pause Only) -->
   <section id="player-sentinel" class="w-full max-w-4xl mx-auto">
     <div id="player-slot-wrapper" class="relative w-full aspect-video bg-black overflow-hidden border-b border-brand-cardBorder/60 sm:rounded-b-xl">
       <div id="player-box" onclick="togglePlayPause()" class="w-full h-full bg-black overflow-hidden relative">
@@ -143,13 +143,13 @@
           <div class="w-8 h-8 rounded-full border-2 border-white/25 border-t-brand-red animate-spin"></div>
         </div>
 
-        <!-- Minimal Play / Pause Control Overlay (No Forward/Backward/Seek) -->
-        <div id="custom-player-overlay" class="hidden absolute inset-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/55 via-transparent to-black/35">
+        <!-- Single Play / Pause Button Only -->
+        <div id="custom-player-overlay" class="hidden absolute inset-0 z-20 flex items-center justify-center bg-black/25">
           <button
             id="play-pause-btn"
             onclick="handlePlayPauseClick(event)"
             aria-label="Play or Pause"
-            class="w-10 h-10 rounded-full bg-black/70 hover:bg-brand-red text-white flex items-center justify-center border border-white/20 backdrop-blur-sm active:scale-95 transition"
+            class="w-11 h-11 rounded-full bg-black/75 hover:bg-brand-red text-white flex items-center justify-center border border-white/25 backdrop-blur-sm active:scale-95 transition"
             type="button">
             <!-- Play Icon -->
             <svg id="icon-play" class="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24">
@@ -159,15 +159,6 @@
             <svg id="icon-pause" class="w-4 h-4 fill-current hidden" viewBox="0 0 24 24">
               <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
             </svg>
-          </button>
-
-          <button
-            id="expand-floating-btn"
-            onclick="scrollToPlayerTop(event)"
-            title="Expand Player"
-            class="hidden px-2.5 py-1 rounded-full bg-black/70 hover:bg-white hover:text-black text-white text-[11px] font-bold border border-white/20 backdrop-blur-sm transition"
-            type="button">
-            ⤢
           </button>
         </div>
 
@@ -179,7 +170,7 @@
 
       <!-- Docked Notice While Floating -->
       <div id="floating-dock-notice" class="hidden w-full h-full flex flex-col items-center justify-center bg-[#121218] text-gray-400 text-xs">
-        <p class="mb-2">Playing in floating window</p>
+        <p class="mb-2">Playing in mini-player</p>
         <button onclick="scrollToPlayerTop(event)" class="px-3 py-1.5 rounded-full bg-[#1F202B] text-white font-semibold border border-brand-cardBorder" type="button">
           Bring Back Here
         </button>
@@ -274,7 +265,7 @@
     <div id="banner-300x250-slot" class="w-[300px] h-[250px] flex items-center justify-center overflow-hidden rounded-xl bg-[#13131A] border border-brand-cardBorder/60"></div>
   </div>
 
-  <!-- Up Next Recommendations Feed -->
+  <!-- Up Next Recommendations Feed (2 Videos Per Row) -->
   <section class="max-w-4xl mx-auto px-3.5 pt-2">
     <div class="flex items-center justify-between mb-2.5">
       <div class="flex items-center space-x-2">
@@ -288,7 +279,7 @@
       <button onclick="setFeedFilter('favorites')" data-feed="favorites" class="feed-pill px-3 py-1 rounded-full bg-[#1A1A24] text-gray-300 border border-brand-cardBorder whitespace-nowrap" type="button">Favorites</button>
     </div>
 
-    <div id="recommendations-list" class="space-y-3 mt-1"></div>
+    <div id="recommendations-list" class="grid grid-cols-2 gap-3 mt-1"></div>
   </section>
 
   <!-- Toast Notification -->
@@ -366,7 +357,7 @@
     }
 
     // ==========================================
-    // UPGRADED PLAYER CONTROLS (PLAY / PAUSE ONLY)
+    // CUSTOM PLAYER CONTROLS (PLAY & PAUSE ONLY)
     // ==========================================
     function syncPlayPauseIcon() {
       const player = document.getElementById("main-video-player");
@@ -389,7 +380,7 @@
       if (!player.paused && !player.ended) {
         overlayHideTimer = setTimeout(() => {
           overlay.classList.add("hidden");
-        }, 2200);
+        }, 2000);
       }
     }
 
@@ -412,13 +403,12 @@
     }
 
     // ==========================================
-    // FLOATING MINI PLAYER (RIGHT / TOP-MID ZONE)
+    // FLOATING MINI PLAYER (OPPOSITE / LEFT SIDE)
     // ==========================================
     function setupFloatingMiniPlayer() {
       const sentinel = document.getElementById("player-sentinel");
       const playerBox = document.getElementById("player-box");
       const dockNotice = document.getElementById("floating-dock-notice");
-      const expandBtn = document.getElementById("expand-floating-btn");
 
       window.addEventListener("scroll", () => {
         if (!currentVideoId) return;
@@ -429,13 +419,12 @@
             isFloating = true;
             playerBox.classList.add("is-floating");
             dockNotice.classList.remove("hidden");
-            expandBtn.classList.remove("hidden");
 
             if (!playerBox.dataset.positioned) {
-              const defaultLeft = Math.max(8, window.innerWidth - 224);
-              const defaultTop = Math.max(68, Math.round(window.innerHeight * 0.22));
-              playerBox.style.left = `${defaultLeft}px`;
-              playerBox.style.top = `${defaultTop}px`;
+              const oppositeLeft = 10;
+              const midTop = Math.max(64, Math.round(window.innerHeight * 0.22));
+              playerBox.style.left = `${oppositeLeft}px`;
+              playerBox.style.top = `${midTop}px`;
             }
           }
         } else {
@@ -525,14 +514,12 @@
     function exitFloatingMode() {
       const playerBox = document.getElementById("player-box");
       const dockNotice = document.getElementById("floating-dock-notice");
-      const expandBtn = document.getElementById("expand-floating-btn");
 
       isFloating = false;
       playerBox.classList.remove("is-floating");
       playerBox.style.left = "";
       playerBox.style.top = "";
       dockNotice.classList.add("hidden");
-      expandBtn.classList.add("hidden");
     }
 
     function scrollToPlayerTop(e) {
@@ -617,7 +604,7 @@
 
     function createNativeBannerCard(index) {
       const wrapper = document.createElement("div");
-      wrapper.className = "native-ad-card flex flex-col items-center justify-center";
+      wrapper.className = "col-span-2 native-ad-card flex flex-col items-center justify-center";
 
       const label = document.createElement("span");
       label.className = "w-full text-left text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 font-semibold";
@@ -866,7 +853,7 @@
       document.getElementById("queue-count").textContent = `${filtered.length} Video${filtered.length === 1 ? "" : "s"}`;
 
       if (filtered.length === 0) {
-        list.innerHTML = `<div class="text-center py-8 text-xs text-gray-400 bg-[#13131A] rounded-xl border border-brand-cardBorder/60">No videos found in videos.json.</div>`;
+        list.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-gray-400 bg-[#13131A] rounded-xl border border-brand-cardBorder/60">No videos found in videos.json.</div>`;
         return;
       }
 
@@ -877,20 +864,20 @@
         const isPlaying = v.id === currentVideoId;
         const article = document.createElement("article");
         article.onclick = () => loadVideo(v.id, true);
-        article.className = `flex space-x-3 bg-[#13131A] p-2 rounded-xl border ${isPlaying ? "border-brand-red" : "border-brand-cardBorder/60"} hover:border-brand-red/50 transition cursor-pointer`;
+        article.className = `flex flex-col bg-[#13131A] p-2 rounded-xl border ${isPlaying ? "border-brand-red" : "border-brand-cardBorder/60"} hover:border-brand-red/50 transition cursor-pointer`;
 
         article.innerHTML = `
-          <div class="relative w-36 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-slate-800">
+          <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-800 mb-2">
             <img alt="${v.title}" class="w-full h-full object-cover" src="${v.thumbnail || DEFAULT_THUMB}" />
             ${isPlaying ? '<span class="absolute top-1 left-1 bg-brand-red text-white font-bold text-[9px] px-1.5 py-0.5 rounded">PLAYING</span>' : '<span class="absolute top-1 left-1 bg-black/75 text-white font-bold text-[9px] px-1 rounded">VIDEO</span>'}
             <span class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-mono px-1 rounded">${v.duration || "HD"}</span>
           </div>
-          <div class="flex flex-col justify-between py-0.5 min-w-0 flex-1">
+          <div class="flex flex-col justify-between min-w-0 flex-1">
             <div>
               <h3 class="text-xs font-semibold text-white leading-tight line-clamp-2">${v.title}</h3>
-              <p class="text-[11px] text-gray-400 mt-1 flex items-center">${v.creator || "My Channel"}</p>
+              <p class="text-[11px] text-gray-400 mt-1 truncate">${v.creator || "My Channel"}</p>
             </div>
-            <span class="text-[10px] text-gray-500">${v.views || "0"} views • ${v.date || ""}</span>
+            <span class="text-[10px] text-gray-500 mt-1.5 truncate">${v.views || "0"} views • ${v.date || ""}</span>
           </div>
         `;
 
