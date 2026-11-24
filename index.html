@@ -56,7 +56,7 @@
       padding: 0.625rem;
     }
 
-    /* YouTube-Style Smooth Floating Mini Player (Corner Docked, Never Center) */
+    /* YouTube-Style Smooth Floating Mini Player (Left or Right Docked) */
     #player-box.is-floating {
       position: fixed;
       width: 212px;
@@ -70,7 +70,7 @@
       transition: left 0.24s cubic-bezier(0.22, 1, 0.36, 1), top 0.24s cubic-bezier(0.22, 1, 0.36, 1), width 0.22s ease, height 0.22s ease, border-radius 0.22s ease;
     }
 
-    /* ফ্লোটিং অবস্থায় যেকোনো কন্ট্রোলার পুরোপুরি লুকানো থাকবে */
+    /* Floating obosthay controller full hide thakbe */
     #player-box.is-floating #full-video-controller,
     #player-box.is-floating #mini-player-controls {
       display: none !important;
@@ -575,7 +575,6 @@
       const miniCtrl = document.getElementById("mini-player-controls");
       const fullCtrl = document.getElementById("full-video-controller");
 
-      // ফ্লোটিং অবস্থায় ভিডিও কন্ট্রোলার সবসময় হাইড থাকবে
       if (!currentVideoId || !controlsVisible || isFloating) {
         miniCtrl.classList.add("hidden");
         fullCtrl.classList.add("hidden");
@@ -704,42 +703,38 @@
     }
 
     // ==========================================
-    // SMOOTH CORNER MINI PLAYER (CLICK RETURNS TO TOP)
+    // YT-STYLE FLOATING MINI PLAYER POSITIONING
+    // Default: Right side, slightly above vertical center
+    // Drag: Snaps to whichever side (left or right) is closer
     // ==========================================
-    function clampAwayFromCenter(left, top, boxW, boxH) {
+    function snapToNearestSide(left, top, boxW, boxH) {
       const pad = 12;
       const minTop = 64;
       const maxLeft = Math.max(pad, window.innerWidth - boxW - pad);
       const maxTop = Math.max(minTop, window.innerHeight - boxH - 16);
 
-      let clampedLeft = Math.min(Math.max(pad, left), maxLeft);
-      let clampedTop = Math.min(Math.max(minTop, top), maxTop);
+      const clampedTop = Math.min(Math.max(minTop, top), maxTop);
 
-      const centerX1 = window.innerWidth * 0.25;
-      const centerX2 = window.innerWidth * 0.75 - boxW;
-      const centerY1 = window.innerHeight * 0.30;
-      const centerY2 = window.innerHeight * 0.70 - boxH;
+      // Box-er horizontal center screen-er majhkhane thakle kon side-er beshi kache ta check kora
+      const boxCenterX = left + boxW / 2;
+      const screenCenterX = window.innerWidth / 2;
+      const snappedLeft = boxCenterX < screenCenterX ? pad : maxLeft;
 
-      if (
-        centerX2 > centerX1 &&
-        clampedLeft > centerX1 &&
-        clampedLeft < centerX2 &&
-        clampedTop > centerY1 &&
-        clampedTop < centerY2
-      ) {
-        clampedLeft = maxLeft;
-        clampedTop = maxTop;
-      }
-
-      return { left: clampedLeft, top: clampedTop };
+      return { left: snappedLeft, top: clampedTop };
     }
 
-    function getDefaultBottomRightPos(playerBox) {
+    function getDefaultRightAboveCenterPos(playerBox) {
       const w = playerBox.offsetWidth || 212;
       const h = playerBox.offsetHeight || 119;
       const rightLeft = Math.max(12, window.innerWidth - w - 12);
-      const bottomTop = Math.max(64, window.innerHeight - h - 16);
-      return { left: rightLeft, top: bottomTop };
+
+      // Vertical center theke ektu upore (38% height-er kache)
+      const slightlyAboveCenterTop = window.innerHeight * 0.38 - h / 2;
+      const minTop = 64;
+      const maxTop = Math.max(minTop, window.innerHeight - h - 16);
+      const clampedTop = Math.min(Math.max(minTop, slightlyAboveCenterTop), maxTop);
+
+      return { left: rightLeft, top: clampedTop };
     }
 
     function enterFloatingMode() {
@@ -754,14 +749,16 @@
       dockNotice.classList.remove("hidden");
 
       requestAnimationFrame(() => {
+        const w = playerBox.offsetWidth || 212;
+        const h = playerBox.offsetHeight || 119;
         const pos = playerBox.dataset.positioned
-          ? clampAwayFromCenter(
+          ? snapToNearestSide(
               parseFloat(playerBox.style.left) || 0,
               parseFloat(playerBox.style.top) || 0,
-              playerBox.offsetWidth || 212,
-              playerBox.offsetHeight || 119
+              w,
+              h
             )
-          : getDefaultBottomRightPos(playerBox);
+          : getDefaultRightAboveCenterPos(playerBox);
 
         playerBox.style.left = `${pos.left}px`;
         playerBox.style.top = `${pos.top}px`;
@@ -844,7 +841,7 @@
       window.addEventListener("scroll", handleScrollSmoothly, { passive: true });
       window.addEventListener("resize", () => {
         if (!isFloating) return;
-        const pos = clampAwayFromCenter(
+        const pos = snapToNearestSide(
           parseFloat(playerBox.style.left) || 0,
           parseFloat(playerBox.style.top) || 0,
           playerBox.offsetWidth || 212,
@@ -902,7 +899,7 @@
         playerBox.classList.remove("is-dragging");
 
         if (isFloating && playerBox.dataset.positioned) {
-          const snapped = clampAwayFromCenter(
+          const snapped = snapToNearestSide(
             parseFloat(playerBox.style.left) || 0,
             parseFloat(playerBox.style.top) || 0,
             playerBox.offsetWidth || 212,
