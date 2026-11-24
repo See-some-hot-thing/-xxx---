@@ -75,7 +75,6 @@ function ensureAutoplay(player) {
   const attemptPlay = player.play();
   if (attemptPlay && typeof attemptPlay.catch === "function") {
     attemptPlay.catch(() => {
-      // Fallback for strict browser autoplay policies
       const prevMuted = player.muted;
       player.muted = true;
       player.play().then(() => {
