@@ -54,6 +54,7 @@ let videoSwitchCount = 0;
 let popunderLoadedCount = 0;
 let isFloating = false;
 let manualMiniMode = false;
+let controlsVisible = false;
 let overlayHideTimer = null;
 
 let userState = JSON.parse(localStorage.getItem("vs_user_state")) || {
@@ -87,7 +88,7 @@ function ensureAutoplay(player) {
 }
 
 // ==========================================
-// PLAYER CONTROLLER (FULL vs MINI PLAY/PAUSE ONLY)
+// CONTROLLER VISIBILITY (HIDE ON MINI / IDLE)
 // ==========================================
 function formatShortTime(sec) {
   if (!Number.isFinite(sec) || sec < 0) return "0:00";
@@ -122,10 +123,11 @@ function syncPlayPauseIcons() {
   });
 }
 
-function updateActiveControlMode() {
+function renderControllerVisibility() {
   const miniCtrl = document.getElementById("mini-player-controls");
   const fullCtrl = document.getElementById("full-video-controller");
-  if (!currentVideoId) {
+
+  if (!currentVideoId || !controlsVisible) {
     miniCtrl.classList.add("hidden");
     fullCtrl.classList.add("hidden");
     return;
@@ -140,21 +142,21 @@ function updateActiveControlMode() {
   }
 }
 
-function showControlsTemporarily() {
-  if (!currentVideoId) return;
-  const player = document.getElementById("main-video-player");
-  const target = isFloating
-    ? document.getElementById("mini-player-controls")
-    : document.getElementById("full-video-controller");
+function hideControlsNow() {
+  controlsVisible = false;
+  clearTimeout(overlayHideTimer);
+  renderControllerVisibility();
+}
 
-  target.classList.remove("hidden");
+function showControlsAndAutoHide(timeoutMs = 2400) {
+  if (!currentVideoId) return;
+  controlsVisible = true;
+  renderControllerVisibility();
   clearTimeout(overlayHideTimer);
 
-  if (!player.paused && !player.ended) {
-    overlayHideTimer = setTimeout(() => {
-      target.classList.add("hidden");
-    }, 2600);
-  }
+  overlayHideTimer = setTimeout(() => {
+    hideControlsNow();
+  }, timeoutMs);
 }
 
 function togglePlayPause() {
@@ -167,7 +169,7 @@ function togglePlayPause() {
     player.pause();
   }
   syncPlayPauseIcons();
-  showControlsTemporarily();
+  showControlsAndAutoHide();
 }
 
 function handlePlayPauseClick(e) {
@@ -183,7 +185,7 @@ function seekBySeconds(delta, e) {
   player.currentTime = Math.min(Math.max(0, player.currentTime + delta), dur);
   updateTimeAndProgress();
   ensureAutoplay(player);
-  showControlsTemporarily();
+  showControlsAndAutoHide();
 }
 
 function handleSeekInput(val, e) {
@@ -193,6 +195,7 @@ function handleSeekInput(val, e) {
   player.currentTime = (Number(val) / 100) * player.duration;
   updateTimeAndProgress();
   ensureAutoplay(player);
+  showControlsAndAutoHide();
 }
 
 function cyclePlaybackSpeed(e) {
@@ -202,7 +205,7 @@ function cyclePlaybackSpeed(e) {
   const nextSpeed = SPEEDS[speedIdx];
   player.playbackRate = nextSpeed;
   document.getElementById("speed-toggle-btn").textContent = `${nextSpeed}x`;
-  showControlsTemporarily();
+  showControlsAndAutoHide();
 }
 
 function updateMuteIcons(muted) {
@@ -215,7 +218,7 @@ function toggleMute(e) {
   const player = document.getElementById("main-video-player");
   player.muted = !player.muted;
   updateMuteIcons(player.muted);
-  showControlsTemporarily();
+  showControlsAndAutoHide();
 }
 
 function toggleFullscreen(e) {
@@ -231,6 +234,7 @@ function toggleFullscreen(e) {
   } else if (document.exitFullscreen) {
     document.exitFullscreen().catch(() => {});
   }
+  showControlsAndAutoHide();
 }
 
 function playNextVideo(e) {
@@ -255,7 +259,9 @@ function enterFloatingMode() {
   isFloating = true;
   playerBox.classList.add("is-floating");
   dockNotice.classList.remove("hidden");
-  updateActiveControlMode();
+
+  // Hide controllers immediately when entering mini size
+  hideControlsNow();
 
   if (!playerBox.dataset.positioned) {
     const rightLeft = Math.max(8, window.innerWidth - 222);
@@ -278,7 +284,7 @@ function exitFloatingMode() {
   playerBox.style.left = "";
   playerBox.style.top = "";
   dockNotice.classList.add("hidden");
-  updateActiveControlMode();
+  hideControlsNow();
   ensureAutoplay(player);
 }
 
@@ -312,6 +318,7 @@ function setupFloatingMiniPlayer() {
   document.addEventListener("fullscreenchange", () => {
     const player = document.getElementById("main-video-player");
     ensureAutoplay(player);
+    showControlsAndAutoHide();
   });
 
   let dragging = false;
@@ -387,7 +394,11 @@ function setupFloatingMiniPlayer() {
       e.stopPropagation();
       return;
     }
-    showControlsTemporarily();
+    if (controlsVisible) {
+      hideControlsNow();
+    } else {
+      showControlsAndAutoHide(isFloating ? 2000 : 2400);
+    }
   }, true);
 }
 
@@ -398,7 +409,17 @@ function scrollToPlayerTop(e) {
 }
 
 function handlePlayerBoxClick() {
-  showControlsTemporarily();
+  if (controlsVisible) {
+    hideControlsNow();
+  } else {
+    showControlsAndAutoHide(isFloating ? 2000 : 2400);
+  }
+}
+
+function handleControllerBackdropClick(e) {
+  if (e.target === e.currentTarget) {
+    hideControlsNow();
+  }
 }
 
 // ==========================================
@@ -550,7 +571,7 @@ function loadVideo(id, isUserSwitch = false) {
     player.removeAttribute("src");
     player.load();
     player.classList.add("hidden");
-    updateActiveControlMode();
+    hideControlsNow();
     placeholder.innerHTML = `
       <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
       <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
@@ -575,7 +596,7 @@ function loadVideo(id, isUserSwitch = false) {
   detailsSec.classList.remove("hidden");
   actionsSec.classList.remove("hidden");
   descSec.classList.remove("hidden");
-  updateActiveControlMode();
+  hideControlsNow();
 
   player.poster = vid.thumbnail || DEFAULT_THUMB;
   player.src = streamUrl;
@@ -611,11 +632,9 @@ mainVideoEl.addEventListener("loadedmetadata", updateTimeAndProgress);
 mainVideoEl.addEventListener("timeupdate", updateTimeAndProgress);
 mainVideoEl.addEventListener("play", () => {
   syncPlayPauseIcons();
-  showControlsTemporarily();
 });
 mainVideoEl.addEventListener("pause", () => {
   syncPlayPauseIcons();
-  updateActiveControlMode();
 });
 mainVideoEl.addEventListener("ended", () => {
   playNextVideo(null);
