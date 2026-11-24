@@ -57,6 +57,7 @@ let manualMiniMode = false;
 let controlsVisible = false;
 let overlayHideTimer = null;
 let scrollRafId = null;
+let ignoreNextScrollDock = false;
 
 let userState = JSON.parse(localStorage.getItem("vs_user_state")) || {
   likes: {},
@@ -89,7 +90,7 @@ function ensureAutoplay(player) {
 }
 
 // ==========================================
-// CONTROLLER (FULL vs MINI PLAY/PAUSE ONLY)
+// CONTROLLER (NORMAL/FULL vs MINI)
 // ==========================================
 function formatShortTime(sec) {
   if (!Number.isFinite(sec) || sec < 0) return "0:00";
@@ -128,20 +129,14 @@ function renderControllerVisibility() {
   const miniCtrl = document.getElementById("mini-player-controls");
   const fullCtrl = document.getElementById("full-video-controller");
 
-  if (!currentVideoId || !controlsVisible) {
+  if (!currentVideoId || !controlsVisible || isFloating) {
     miniCtrl.classList.add("hidden");
     fullCtrl.classList.add("hidden");
     return;
   }
 
-  // Mini player NEVER shows full controller; ONLY Play/Pause
-  if (isFloating) {
-    fullCtrl.classList.add("hidden");
-    miniCtrl.classList.remove("hidden");
-  } else {
-    miniCtrl.classList.add("hidden");
-    fullCtrl.classList.remove("hidden");
-  }
+  miniCtrl.classList.add("hidden");
+  fullCtrl.classList.remove("hidden");
 }
 
 function hideControlsNow() {
@@ -151,7 +146,7 @@ function hideControlsNow() {
 }
 
 function showControlsAndAutoHide(timeoutMs = 2400) {
-  if (!currentVideoId) return;
+  if (!currentVideoId || isFloating) return;
   controlsVisible = true;
   renderControllerVisibility();
   clearTimeout(overlayHideTimer);
@@ -171,7 +166,7 @@ function togglePlayPause() {
     player.pause();
   }
   syncPlayPauseIcons();
-  showControlsAndAutoHide(isFloating ? 1800 : 2400);
+  showControlsAndAutoHide(2400);
 }
 
 function handlePlayPauseClick(e) {
@@ -250,7 +245,7 @@ function playNextVideo(e) {
 }
 
 // ==========================================
-// SMOOTH CORNER MINI PLAYER (AVOIDS CENTER)
+// SMOOTH CORNER MINI PLAYER (CLICK RETURNS TO TOP)
 // ==========================================
 function clampAwayFromCenter(left, top, boxW, boxH) {
   const pad = 12;
@@ -261,7 +256,6 @@ function clampAwayFromCenter(left, top, boxW, boxH) {
   let clampedLeft = Math.min(Math.max(pad, left), maxLeft);
   let clampedTop = Math.min(Math.max(minTop, top), maxTop);
 
-  // Keep out of the center zone of the viewport
   const centerX1 = window.innerWidth * 0.25;
   const centerX2 = window.innerWidth * 0.75 - boxW;
   const centerY1 = window.innerHeight * 0.30;
@@ -274,7 +268,6 @@ function clampAwayFromCenter(left, top, boxW, boxH) {
     clampedTop > centerY1 &&
     clampedTop < centerY2
   ) {
-    // Snap smoothly to nearest outer corner (bottom-right default)
     clampedLeft = maxLeft;
     clampedTop = maxTop;
   }
@@ -333,10 +326,20 @@ function exitFloatingMode() {
   ensureAutoplay(player);
 }
 
+function returnMiniToTopVideo() {
+  ignoreNextScrollDock = true;
+  exitFloatingMode();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  setTimeout(() => {
+    ignoreNextScrollDock = false;
+    showControlsAndAutoHide(2400);
+  }, 550);
+}
+
 function toggleMiniModeManual(e) {
   if (e) e.stopPropagation();
   if (isFloating) {
-    exitFloatingMode();
+    returnMiniToTopVideo();
   } else {
     manualMiniMode = true;
     enterFloatingMode();
@@ -347,7 +350,7 @@ function handleScrollSmoothly() {
   if (scrollRafId) return;
   scrollRafId = requestAnimationFrame(() => {
     scrollRafId = null;
-    if (!currentVideoId) return;
+    if (!currentVideoId || ignoreNextScrollDock) return;
     const sentinel = document.getElementById("player-sentinel");
     const rect = sentinel.getBoundingClientRect();
 
@@ -406,7 +409,7 @@ function setupFloatingMiniPlayer() {
     if (!dragging || !isFloating) return;
     const dx = clientX - startX;
     const dy = clientY - startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
       moved = true;
     }
     const maxLeft = Math.max(12, window.innerWidth - playerBox.offsetWidth - 12);
@@ -436,12 +439,11 @@ function setupFloatingMiniPlayer() {
     }
 
     if (moved) {
-      setTimeout(() => { moved = false; }, 60);
+      setTimeout(() => { moved = false; }, 70);
     }
   }
 
   playerBox.addEventListener("touchstart", (e) => {
-    if (e.target.closest("button")) return;
     const t = e.touches[0];
     onDragStart(t.clientX, t.clientY);
   }, { passive: true });
@@ -455,7 +457,6 @@ function setupFloatingMiniPlayer() {
   window.addEventListener("touchend", onDragEnd);
 
   playerBox.addEventListener("mousedown", (e) => {
-    if (e.target.closest("button")) return;
     onDragStart(e.clientX, e.clientY);
   });
 
@@ -471,25 +472,33 @@ function setupFloatingMiniPlayer() {
       e.stopPropagation();
       return;
     }
+    if (isFloating) {
+      e.stopPropagation();
+      returnMiniToTopVideo();
+      return;
+    }
     if (controlsVisible) {
       hideControlsNow();
     } else {
-      showControlsAndAutoHide(isFloating ? 1800 : 2400);
+      showControlsAndAutoHide(2400);
     }
   }, true);
 }
 
 function scrollToPlayerTop(e) {
   if (e) e.stopPropagation();
-  exitFloatingMode();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  returnMiniToTopVideo();
 }
 
 function handlePlayerBoxClick() {
+  if (isFloating) {
+    returnMiniToTopVideo();
+    return;
+  }
   if (controlsVisible) {
     hideControlsNow();
   } else {
-    showControlsAndAutoHide(isFloating ? 1800 : 2400);
+    showControlsAndAutoHide(2400);
   }
 }
 
