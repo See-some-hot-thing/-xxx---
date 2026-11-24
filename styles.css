@@ -1,3 +1,7 @@
+html {
+  scroll-behavior: smooth;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -21,7 +25,7 @@
   padding: 0.625rem;
 }
 
-/* Floating Mini Player on Right Side */
+/* YouTube-Style Smooth Floating Mini Player (Corner Docked, Never Center) */
 #player-box.is-floating {
   position: fixed;
   width: 212px;
@@ -32,9 +36,11 @@
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.9);
   touch-action: none;
   cursor: grab;
+  transition: left 0.24s cubic-bezier(0.22, 1, 0.36, 1), top 0.24s cubic-bezier(0.22, 1, 0.36, 1), width 0.22s ease, height 0.22s ease, border-radius 0.22s ease;
 }
 
-#player-box.is-floating:active {
+#player-box.is-floating.is-dragging {
+  transition: none;
   cursor: grabbing;
 }
 
