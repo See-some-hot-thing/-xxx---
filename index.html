@@ -145,7 +145,7 @@
           class="w-full h-full object-contain bg-black hidden pointer-events-none"
           autoplay
           playsinline
-          preload="auto"
+          preload="metadata"
           disablePictureInPicture
           oncontextmenu="return false;">
           Your browser does not support the HTML5 video tag.
@@ -316,7 +316,7 @@
 
         <div id="empty-player-placeholder" class="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-[#121218]">
           <p class="text-sm font-bold text-gray-200 mb-1">Loading Video...</p>
-          <p class="text-xs text-gray-400">Fetching stream from <code class="text-gray-200">videos.json</code></p>
+          <p class="text-xs text-gray-400">Fetching stream from <code class="text-gray-200">videos.json</code> & R2 Worker</p>
         </div>
       </div>
 
@@ -446,6 +446,56 @@
     const DEFAULT_THUMB = "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR";
 
     // ==========================================
+    // CLOUDFLARE R2 PROTECTED VIDEO WORKER CONFIG
+    // ==========================================
+    const WORKER_URL = "https://my-video-streamt.rabbipersonaluse.workers.dev";
+    const FALLBACK_R2_KEY = "vd6s.net Cloudflare R2 Object Storage Tutorial_ Create Bucket & Custom Domain Setup_1080p50.mp4";
+    const tokenUrlCache = new Map(); // key -> { url, expiresAt }
+
+    async function fetchProtectedVideoUrl(videoKey, forceRefresh = false) {
+      if (!videoKey) return "";
+
+      const now = Date.now();
+      const cached = tokenUrlCache.get(videoKey);
+      if (!forceRefresh && cached && cached.expiresAt > now) {
+        return cached.url;
+      }
+
+      const response = await fetch(WORKER_URL + "/api/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          key: videoKey
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Worker error: " + response.status);
+      }
+
+      const result = await response.json();
+      if (!result || !result.url) {
+        throw new Error("Invalid token response from Worker");
+      }
+
+      // Cache for 10 minutes (or shorter if Worker returns expiresIn)
+      const ttlMs = (Number(result.expiresIn) > 30 ? Number(result.expiresIn) - 15 : 600) * 1000;
+      tokenUrlCache.set(videoKey, {
+        url: result.url,
+        expiresAt: now + ttlMs
+      });
+
+      return result.url;
+    }
+
+    function getVideoR2Key(vid) {
+      if (!vid) return "";
+      return vid.r2Key || vid.key || vid.videoKey || "";
+    }
+
+    // ==========================================
     // ANTI-DOWNLOAD / SHORTCUT BLOCKING
     // ==========================================
     document.addEventListener("keydown", (e) => {
@@ -504,6 +554,7 @@
     let scrollRafId = null;
     let ignoreNextScrollDock = false;
     let isSeeking = false;
+    let loadSeq = 0;
 
     let userState = JSON.parse(localStorage.getItem("vs_user_state")) || {
       likes: {},
@@ -704,8 +755,6 @@
 
     // ==========================================
     // YT-STYLE FLOATING MINI PLAYER POSITIONING
-    // Default: Right side, slightly above vertical center
-    // Drag: Snaps to whichever side (left or right) is closer
     // ==========================================
     function snapToNearestSide(left, top, boxW, boxH) {
       const pad = 12;
@@ -714,8 +763,6 @@
       const maxTop = Math.max(minTop, window.innerHeight - boxH - 16);
 
       const clampedTop = Math.min(Math.max(minTop, top), maxTop);
-
-      // Box-er horizontal center screen-er majhkhane thakle kon side-er beshi kache ta check kora
       const boxCenterX = left + boxW / 2;
       const screenCenterX = window.innerWidth / 2;
       const snappedLeft = boxCenterX < screenCenterX ? pad : maxLeft;
@@ -728,7 +775,6 @@
       const h = playerBox.offsetHeight || 119;
       const rightLeft = Math.max(12, window.innerWidth - w - 12);
 
-      // Vertical center theke ektu upore (38% height-er kache)
       const slightlyAboveCenterTop = window.innerHeight * 0.38 - h / 2;
       const minTop = 64;
       const maxTop = Math.max(minTop, window.innerHeight - h - 16);
@@ -1068,8 +1114,16 @@
     // ==========================================
     // VIDEO PLAYER, SHARE LINK & UI LOGIC
     // ==========================================
-    function getVideoSource(vid) {
+    function getDirectVideoSource(vid) {
       return (vid && (vid.videoUrl || vid.url)) || "";
+    }
+
+    async function resolveVideoStreamUrl(vid) {
+      const r2Key = getVideoR2Key(vid);
+      if (r2Key) {
+        return await fetchProtectedVideoUrl(r2Key);
+      }
+      return getDirectVideoSource(vid);
     }
 
     function updateShareUrlParam(id) {
@@ -1100,26 +1154,29 @@
       }
     }
 
-    function loadVideo(id, isUserSwitch = false) {
+    async function loadVideo(id, isUserSwitch = false) {
+      const seq = ++loadSeq;
       const player = document.getElementById("main-video-player");
       const placeholder = document.getElementById("empty-player-placeholder");
+      const buffering = document.getElementById("video-buffering");
       const detailsSec = document.getElementById("video-details-section");
       const actionsSec = document.getElementById("video-actions-section");
       const descSec = document.getElementById("video-desc-section");
 
       const vid = videos.find(v => String(v.id) === String(id)) || videos[0];
-      const streamUrl = getVideoSource(vid);
+      const hasAnySource = vid && (getVideoR2Key(vid) || getDirectVideoSource(vid));
 
-      if (!vid || !streamUrl) {
+      if (!vid || !hasAnySource) {
         currentVideoId = null;
         player.pause();
         player.removeAttribute("src");
         player.load();
         player.classList.add("hidden");
+        buffering.classList.add("hidden");
         hideControlsNow();
         placeholder.innerHTML = `
           <p class="text-sm font-bold text-gray-200 mb-1">No Video Available</p>
-          <p class="text-xs text-gray-400">Add video links inside <code class="text-gray-200">videos.json</code> on GitHub.</p>
+          <p class="text-xs text-gray-400">Add <code class="text-gray-200">r2Key</code> or <code class="text-gray-200">videoUrl</code> inside <code class="text-gray-200">videos.json</code>.</p>
         `;
         placeholder.classList.remove("hidden");
         detailsSec.classList.add("hidden");
@@ -1136,20 +1193,13 @@
       currentVideoId = vid.id;
       updateShareUrlParam(vid.id);
 
-      player.classList.remove("hidden");
       placeholder.classList.add("hidden");
+      player.classList.remove("hidden");
+      buffering.classList.remove("hidden");
       detailsSec.classList.remove("hidden");
       actionsSec.classList.remove("hidden");
       descSec.classList.remove("hidden");
       hideControlsNow();
-
-      player.poster = vid.thumbnail || DEFAULT_THUMB;
-      player.src = streamUrl;
-      player.playbackRate = SPEEDS[speedIdx];
-      player.load();
-      ensureAutoplay(player);
-      syncPlayPauseIcons();
-      updateTimeAndProgress();
 
       const titleText = vid.title || "Untitled Video";
       document.getElementById("video-title").textContent = titleText;
@@ -1169,6 +1219,28 @@
       renderRecommendations();
       if (isUserSwitch) {
         window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      try {
+        const streamUrl = await resolveVideoStreamUrl(vid);
+        if (seq !== loadSeq) return; // Ignore stale switch
+
+        if (!streamUrl) {
+          throw new Error("Empty video stream URL");
+        }
+
+        player.poster = vid.thumbnail || DEFAULT_THUMB;
+        player.src = streamUrl;
+        player.playbackRate = SPEEDS[speedIdx];
+        player.load();
+        ensureAutoplay(player);
+        syncPlayPauseIcons();
+        updateTimeAndProgress();
+      } catch (err) {
+        if (seq !== loadSeq) return;
+        console.error("Video error:", err);
+        buffering.classList.add("hidden");
+        showToast("Video load failed. Check Worker and R2 settings.");
       }
     }
 
@@ -1197,8 +1269,26 @@
       document.getElementById("video-buffering").classList.add("hidden");
       syncPlayPauseIcons();
     });
-    mainVideoEl.addEventListener("error", () => {
+    mainVideoEl.addEventListener("error", async () => {
       document.getElementById("video-buffering").classList.add("hidden");
+      const vid = videos.find(v => String(v.id) === String(currentVideoId));
+      const r2Key = getVideoR2Key(vid);
+
+      // Retry once with a fresh token if R2 signed URL expired
+      if (r2Key && !mainVideoEl.dataset.retriedToken) {
+        try {
+          mainVideoEl.dataset.retriedToken = "1";
+          const freshUrl = await fetchProtectedVideoUrl(r2Key, true);
+          if (freshUrl && String(vid.id) === String(currentVideoId)) {
+            mainVideoEl.src = freshUrl;
+            mainVideoEl.load();
+            ensureAutoplay(mainVideoEl);
+            return;
+          }
+        } catch (_) {}
+      }
+
+      delete mainVideoEl.dataset.retriedToken;
       showToast("Video link could not play");
     });
 
@@ -1403,14 +1493,21 @@
       } catch (err) {
         console.error("Failed to load videos.json:", err);
         videos = [];
-        showToast("Could not load videos.json");
+        // Fallback to R2 protected key if videos.json is missing/empty
+        videos = [{
+          id: "r2-default",
+          title: "Cloudflare R2 Object Storage Tutorial",
+          r2Key: FALLBACK_R2_KEY,
+          creator: "VideoShare",
+          quality: "1080p50"
+        }];
       }
 
       const params = new URLSearchParams(window.location.search);
       const sharedId = params.get("v");
       const initialId = sharedId || (videos.length > 0 ? videos[0].id : null);
 
-      loadVideo(initialId, false);
+      await loadVideo(initialId, false);
 
       setTimeout(() => {
         initAdsAfterVideo();
