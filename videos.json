@@ -1,22 +1,12 @@
 [
   {
-    "id": 1,
+    "id": "1",
     "title": "Cloudflare R2 Object Storage Tutorial",
-    "videoUrl": "https://cool-heart-0b03.rabbipersonaluse.workers.dev/video1.mp4",
-    "creator": "My Channel",
-    "subs": "Creator",
+    "r2Key": "vd6s.net Cloudflare R2 Object Storage Tutorial_ Create Bucket & Custom Domain Setup_1080p50.mp4",
     "category": "Sci-Fi",
-    "hashtags": [
-      "#CloudflareR2",
-      "#1080p50",
-      "#Tutorial"
-    ],
+    "quality": "1080p50",
+    "creator": "R2 Channel",
     "views": "1.2K",
-    "date": "2026-11-23",
-    "duration": "1080p",
-    "likes": 25,
-    "dislikes": 0,
-    "thumbnail": "https://lh3.googleusercontent.com/aida-public/AB6AXuCYU1tgUo1HVlvVKqbjPyvMdEu1QeD-0DJgdlc_NZizO1MMTT4Au1CbMtcXze7xApFcL3m9n1NnHv1svw-LtrEfXD1RNN9gZO6gwlAkYL9A_byetE3dg6nLfwDdxug6S8ZL0gTFh8XUE3l1phEQNTJ3HMvh33wfsKnlOKBiUK-VRA8ZZKbG8UQKhggHEEWEGjUDuldumQAHrftHBlmsLNzSPKOvdKoaU7YOKPR0QWGNzGXb4i0yUsUR",
-    "description": "Protected video stream via Cloudflare Worker and R2."
+    "date": "2026"
   }
 ]
