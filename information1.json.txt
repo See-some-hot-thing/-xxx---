@@ -1,0 +1,16 @@
+[
+  {
+    "id": "vid-1",
+    "title": "আপনার ওয়ার্কারের ভিডিওর টাইটেল",
+    "thumbnail": "https://example.com/thumb1.jpg",
+    "duration": "08:45",
+    "quality": "1080p",
+    "category": "Gaming",
+    "creator": "EchoVerse",
+    "subs": "15K subscribers",
+    "views": "12.4K",
+    "date": "Nov 2026",
+    "description": "এই ভিডিওটির বিস্তারিত বিবরণ এখানে লিখুন।",
+    "hashtags": ["#gaming", "#highlights"]
+  }
+]
