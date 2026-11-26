@@ -18,8 +18,7 @@
   <div id="video-container" class="video-grid">লোড হচ্ছে...</div>
 
   <script>
-    // আপনার আসল Worker লিংক বসানো হয়েছে
-    const WORKER_URL = "https://my-video-api.rabbipersonaluse.workers.dev";
+    const WORKER_URL = "https://" + "my-video-api.rabbipersonaluse" + ".workers.dev";
     const SECRET_TOKEN = "AmarSecretKey12345";
 
     const container = document.getElementById("video-container");
@@ -31,7 +30,7 @@
       }
     })
     .then(response => {
-      if (!response.ok) throw new Error("ভিডিও লোড করা সম্ভব হচ্ছে না!");
+      if (!response.ok) throw new Error("ভিডিও লোড করা সম্ভব হচ্ছে না! Status: " + response.status);
       return response.json();
     })
     .then(videos => {
@@ -42,8 +41,7 @@
         card.className = "video-card";
 
         card.innerHTML = `
-          <video controls preload="metadata" controlsList="nodownload">
-            <source src="${video.url}" type="video/mp4">
+          <video controls preload="metadata" controlsList="nodownload" src="${video.url}">
             আপনার ব্রাউজার ভিডিও সাপোর্ট করে না।
           </video>
           <h3>${video.title}</h3>
@@ -53,7 +51,7 @@
       });
     })
     .catch(error => {
-      container.innerHTML = `<p style="color: red;">${error.message}</p>`;
+      container.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
     });
   </script>
 
