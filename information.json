@@ -1,8 +1,8 @@
 [
   {
-    "id": "vid-1",
-    "title": "আপনার ওয়ার্কারের ভিডিওর টাইটেল",
-    "thumbnail": "https://example.com/thumb1.jpg",
+    "id": 1,
+    "title": "প্রথম ভিডিওর টাইটেল এখানে লিখুন",
+    "thumbnail": "https://example.com",
     "duration": "08:45",
     "quality": "1080p",
     "category": "Gaming",
@@ -10,7 +10,21 @@
     "subs": "15K subscribers",
     "views": "12.4K",
     "date": "Nov 2026",
-    "description": "এই ভিডিওটির বিস্তারিত বিবরণ এখানে লিখুন।",
+    "description": "প্রথম ভিডিওটির বিস্তারিত বিবরণ এখানে লিখুন।",
     "hashtags": ["#gaming", "#highlights"]
+  },
+  {
+    "id": 2,
+    "title": "দ্বিতীয় ভিডিওর টাইটেল এখানে লিখুন",
+    "thumbnail": "https://example.com",
+    "duration": "10:20",
+    "quality": "1080p",
+    "category": "Movies",
+    "creator": "EchoVerse",
+    "subs": "15K subscribers",
+    "views": "5.1K",
+    "date": "Nov 2026",
+    "description": "দ্বিতীয় ভিডিওটির বিস্তারিত বিবরণ এখানে লিখুন।",
+    "hashtags": ["#movies", "#trending"]
   }
 ]
