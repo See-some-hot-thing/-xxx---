@@ -1,0 +1,17 @@
+[
+  {
+    "id": "vid-1",
+    "title": "Sample Video Title 1",
+    "url": "https://your-worker-or-r2-link.com/video1.mp4",
+    "thumbnail": "",
+    "duration": "10:24",
+    "quality": "1080p",
+    "category": "Gaming",
+    "creator": "EchoVerse",
+    "subs": "12K subscribers",
+    "views": "4.5K",
+    "date": "Nov 2026",
+    "description": "Ei video-tar details ekhane likhbe.",
+    "hashtags": ["#gaming", "#gameplay"]
+  }
+]
